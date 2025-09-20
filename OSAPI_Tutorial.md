@@ -1,8 +1,10 @@
 # Ouster 激光雷达原生API编程入门
 
-**张佳炜**
-
-**深圳市沣满智能科技有限公司**
+> 原作者：**张佳炜**
+>
+> **深圳市沣满智能科技有限公司**
+>
+> [样例参考](https://deepwiki.com/ytldsimage/OSLidarAPI-DEMO) 及  [PDF文档](https://github.com/ytldsimage/OSLidarAPI-DEMO/blob/7ea6cab7/ouster_api/ouster_api.pdf) 下载
 
 Ouster 激光雷达为软件访问和控制传感器提供了一些API,并在此基础上通过 Ouster SDK进行了封装, 以便开发者更方便地使用;尽管如此,Ouster 在其产品手册或帮助文档中公开了这些API的说明和使用方法,本文介绍如何在不依赖 Ouster SDK的情况下,直接使用底层API访问和控制雷达,供研究学习或希望绕过 SDK 直接使用底层API的用户参考。
 
@@ -22,13 +24,13 @@ Ouster 激光雷达启动后运行了一个HTTP Server,连接至雷达的主机�
 
 获取 `sensor_info`:
 
-```
+```bash
 curl http://ouster/api/v1/sensor/metadata/sensor_info | jq
 ```
 
 返回结果:
 
-```
+```json
 {
   "prod_pn": "840-103575-06",
   "build_date": "2024-01-11T06:02:47Z",
@@ -45,13 +47,13 @@ curl http://ouster/api/v1/sensor/metadata/sensor_info | jq
 
 POST方法可用于配置雷达:
 
-```
+```bash
 curl -X POST http://ouster/api/v1/sensor/config -H 'Content-Type: application/json' --data-raw '{"lidar_mode": "1024x10"}'
 ```
 
 验证配置结果,可以使用:
 
-```
+```bash
 curl http://ouster/api/v1/sensor/config
 ```
 
@@ -59,13 +61,13 @@ curl http://ouster/api/v1/sensor/config
 
 实验使用的激光雷达具有用户数据域(user data field)用于写入用户数据:
 
-```
+```bash
 curl -X PUT http://ouster/api/v1/user/data -H 'Content-Type: application/json' -d '"my own data"'
 ```
 
 验证结果:
 
-```
+```bash
 curl http://ouster/api/v1/user/data
 ```
 
@@ -75,13 +77,13 @@ curl http://ouster/api/v1/user/data
 
 用户数据域的内容可以擦除:
 
-```
+```bash
 curl -X DELETE http://ouster/api/v1/user/data
 ```
 
 验证结果:
 
-```
+```bash
 curl http://ouster/api/v1/user/data
 ```
 
@@ -95,7 +97,7 @@ libcurl 是一个功能强大、跨平台的开源网络传输库,支持多种�
 
 使用libcurl 的 easy interface 之前,先获取一个 easy handle:
 
-```
+```c++
 CURL *os_init_curl_client()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -105,7 +107,7 @@ CURL *os_init_curl_client()
 
 使用libcurl 结束后,调用以下的函数执行释放:
 
-```
+```c++
 void os_deinit_curl_client(CURL *curl)
 {
     curl_easy_cleanup(curl);
@@ -117,7 +119,7 @@ void os_deinit_curl_client(CURL *curl)
 
 以下这段代码的作用是:发送一个HTTP GET请求,并将服务器响应完整地存储到内存中,供后续处理:
 
-```
+```c++
 // 用于保存服务器返回的响应数据
 struct memory {
     char *response; // 指向动态分配的内存,用来存放返回的内容
@@ -165,7 +167,7 @@ CURLcode os_curl_get(CURL *curl, char *url, struct memory *mem)
 
 以下函数通过 libcurl 向指定的URL发送一个带有JSON数据的HTTP POST请求,常用于配置Ouster 激光雷达或向其发送控制命令:
 
-```
+```c++
 CURLcode os_curl_post(CURL *curl, char *url, char *str)
 {
     curl_easy_reset(curl);
@@ -190,7 +192,7 @@ CURLcode os_curl_post(CURL *curl, char *url, char *str)
 
 以下函数实现了HTTP PUT请求,与前面的POST实现很相似,只是把请求方法改成了PUT:
 
-```
+```c++
 CURLcode os_curl_put(CURL *curl, char *url, char *str)
 {
     curl_easy_reset(curl);
@@ -212,7 +214,7 @@ CURLcode os_curl_put(CURL *curl, char *url, char *str)
 
 以下函数向指定URL 发送一个HTTP DELETE 请求,用于删除或关闭雷达中的某些配置或资源:
 
-```
+```c++
 CURLcode os_curl_delete(CURL *curl, char *url)
 {
     curl_easy_reset(curl);
@@ -233,7 +235,7 @@ CURLcode os_curl_delete(CURL *curl, char *url)
 - 再次读取用户数据域内容以验证写入成功;
 - 擦除用户数据域内容并重新读取以验证擦除结果。
 
-```
+```c++
 // 使用GET方法获取用户数据域的内容
 static int get_user_data(CURL *curl)
 {
@@ -350,7 +352,7 @@ static int curl_client_test()
 
 以上测试程序的执行结果:
 
-```
+```c++
 Getting sensor config...
 {"udp_port_imu": 7503, "nmea_ignore_valid_char": 0, "nmea_baud_rate": "BAUD_9600", "udp_profile_imu": "LEGACY", "sync_pulse_out_angle": 360, "udp_dest": "192.168.1.7", "nmea_leap_seconds": 0, "timestamp_mode": "TIME_FROM_INTERNAL_OSC", "udp_port_lidar": 7502, "lidar_mode": "1024x10", "sync_pulse_out_pulse_width": 10, "phase_lock_offset":0, "nmea_in_polarity": "ACTIVE_HIGH", "columns_per_packet": 16, "udp_profile_lidar": "RNG15_RFL8_NIR8", "signal_multiplier": 1, "phase_lock_enable": false, "sync_pulse_in_polarity": "ACTIVE_HIGH", "azimuth_window": [0, 360000], "multipurpose_io_mode": "OFF", "sync_pulse_out_frequency": 1, "operating_mode": "STANDBY", "sync_pulse_out_polarity": "ACTIVE_HIGH"}
 Setting sensor config...
@@ -386,7 +388,11 @@ Ouster 激光雷达在运行过程中会将采集到的点云回波和IMU 数据
 
 固件用户手册提出了两种坐标系(雷达坐标系和传感器坐标系),此处仅介绍雷达坐标系,包括下面解析从雷达收到的数据得到点云的xyz坐标也是以雷达坐标系为参考的,传感器坐标系原理是类似的。
 
+![coord1](./OSAPI_Tutorial.assets/coord1.png)
+
 [图1: 传感器坐标系(俯视)]
+
+![coord2](./OSAPI_Tutorial.assets/coord2.png)
 
 [图2: 传感器坐标系(侧视)]
 
@@ -401,7 +407,23 @@ Ouster 激光雷达在运行过程中会将采集到的点云回波和IMU 数据
 
 从回波数据可以得到光源和被探测物体之间的距离,xyz坐标需要计算,固件用户手册中给出了从距离计算 xyz 坐标的过程,见图3。
 
+![range2xyz](./OSAPI_Tutorial.assets/range2xyz.png)
+
 [图3: 从距离得到xyz坐标的计算过程]
+
+核心参数定义：
+
+- \( r = range\_mm \)（雷达光源到被探测目标的距离）；
+
+- \( |\vec{n}| = \sqrt{(beam\_to\_lidar[0,3])^2 + (beam\_to\_lidar[2,3])^2} \)（雷达光源到坐标系原点的距离）；
+
+- \( r = \vec{r'} + |\vec{n}| \)（修正后的距离，即光源到目标的实际距离向量长度）；
+
+- \( \theta_{encoder} = 2\pi \cdot (1 - \frac{measurement\ ID}{scan\_width}) \)（光源绕轴旋转角度，弧度制）；
+
+- \( \theta_{azimuth} = -2\pi \cdot \frac{beam\_azimuth\_angles[i]}{360} \)（光束旋转角，弧度制）；
+
+- \( \phi = 2\pi \cdot \frac{beam\_altitude\_angles[i]}{360} \)（光束俯仰角，弧度制）。
 
 计算过程的分析如下:
 
@@ -422,9 +444,13 @@ Ouster 激光雷达在运行过程中会将采集到的点云回波和IMU 数据
 
 由于光束具有不同的旋转角,如果把同时发射的光束的回波信号作为2D图像的同一列,得到的图像在人眼看来是不自然的,行与行之间像素出现交错。图4是交错的深度图像的例子。
 
+![lidar_scan_staggered](./OSAPI_Tutorial.assets/lidar_scan_staggered.png)
+
 [图4: 交错的2D 深度图像]
 
 把交错的图像每一行的像素进行平移,使得到的图像在人眼看起来是自然的,这个过程称为解交错。图5是图4经过解交错后得到的图像。解交错处理时图像每一行需要移动多少个像素的距离,记录在 `pixel_shift_by_row` 数组中,可以使用HTTP API 获取。
+
+![lidar_scan_destaggered](./OSAPI_Tutorial.assets/lidar_scan_destaggered.png)
 
 [图5: 解交错后的2D深度图像]
 
@@ -453,13 +479,15 @@ OS-1-64 在正常工作时会连续实时地将采集到的回波信息和IMU �
   - 回波信息数据块记录了每道光束距离、反射率、反射强度等测量结果,有多少道光束,就有多少个回波信息数据块,这些数据块是连续存放的。
 - 结尾部分是占用256bit的包尾(PACKET FOOTER),包含了64bit的E2E CRC编码。
 
+![packet_format](./OSAPI_Tutorial.assets/packet_format.png)
+
 [图6: RNG19_RFL8_SIG16_NIR16 选项数据包格式]
 
 ### 2.3. 使用Linux C Socket API 处理 UDP数据包
 
 以下几个函数封装了UDP通信的基本操作:
 
-```
+```c++
 // 在指定端口上创建并绑定一个UDP Socket,用于接收数据
 int os_init_udp_client(uint16_t port)
 {
@@ -521,7 +549,7 @@ IMU 数据包格式较简单直观,可以从读取IMU数据开始,对上一节�
 
 IMU UDP 包长固定为48字节,记录了时间戳和与各轴对应的加速度和角速度数据,数据组织形式可用以下的结构体表示:
 
-```
+```c++
 typedef struct imu_packet_t {
     uint64_t sys_ts;
     uint64_t accel_ts;
@@ -537,7 +565,7 @@ typedef struct imu_packet_t {
 
 **2. 读取数据包函数**
 
-```
+```c++
 os_status_t os_udp_client_get_imu_packet(int sockfd, imu_packet_t *imu_packet)
 {
     uint8_t buf[48]; // IMU UDP数据包长固定为48字节
@@ -562,7 +590,7 @@ os_status_t os_udp_client_get_imu_packet(int sockfd, imu_packet_t *imu_packet)
 
 编写了如下函数,连续读取100个IMU数据包,对以上读取IMU数据包的函数进行简单验证:
 
-```
+```c++
 int read_imu_data()
 {
     uint16_t port = 7503; // IMU UDP数据包接收端口
@@ -591,7 +619,7 @@ int read_imu_data()
 
 以上测试函数的执行结果(部分):
 
-```
+```c++
 0.014648 -0.024170 0.995605 0.946045 1.136780 -0.343323
 0.008789 -0.032471 1.019775 1.243591 1.068115 -0.770569
 0.021729 -0.026123 0.992676 0.579834 0.137329 0.137329
@@ -610,7 +638,7 @@ int read_imu_data()
 
 #### 2.5.1. 数据结构
 
-```
+```c++
 // 回波信息数据块头部
 typedef struct column_header_t {
     uint64_t timestamp;
@@ -683,7 +711,7 @@ typedef struct xyz_t {
 
 **1. 读取UDP数据包**
 
-```
+```c++
 os_status_t os_udp_client_get_lidar_packet(int sockfd, lidar_packet_t *lidar_packet)
 {
     uint8_t buf[LIDAR_PACKET_BUFFER_SIZE];
@@ -716,7 +744,7 @@ os_status_t os_udp_client_get_lidar_packet(int sockfd, lidar_packet_t *lidar_pac
 
 **2. 获取扫描的一帧数据**
 
-```
+```c++
 void os_batch_packet_to_scan(lidar_packet_t *packet, lidar_scan_t *scan)
 {
     // ... (logic to copy data from packet columns to the correct position in the scan buffer based on measurement_id) ...
@@ -759,7 +787,7 @@ void os_destagger(void *buf, void *buf_destaggered, int *pixel_shift_by_row, siz
 
 **3. 获取3D点云的xyz坐标**
 
-```
+```c++
 // 根据固件用户手册中的计算方法计算xyz坐标
 xyz_t* os_cartesian(lidar_scan_t *scan, size_t *count)
 {
@@ -770,22 +798,22 @@ xyz_t* os_cartesian(lidar_scan_t *scan, size_t *count)
     *count = 0;
 
     for(size_t i = 0; i < scan->w; i++) {
-        m_id = scan->measurement_id[i];
-        status = scan->status[i];
+        uint32_t m_id = scan->measurement_id[i];
+        uint32_t status = scan->status[i];
         for(size_t j = 0; j < scan->h; j++) {
-            offset_s = scan->w * j + i;
+            size_t offset_s = scan->w * j + i;
             if(!status || !scan->rng[offset_s]) {
                 continue;
             }
 
             // ... (calculations for n, rng2, theta_encoder, theta_azimuth, phi) ...
             
-            n = sqrt(pow(sensor_info.beam_to_lidar_transform[0][3], 2.0) + pow(sensor_info.beam_to_lidar_transform[2][3], 2.0));
-            rng2 = (double)scan->rng[offset_s] - n;
+            double n = sqrt(pow(sensor_info.beam_to_lidar_transform[0][3], 2.0) + pow(sensor_info.beam_to_lidar_transform[2][3], 2.0));
+            double rng2 = (double)scan->rng[offset_s] - n;
             assert(rng2 >= 0);
-            theta_encoder = 2 * M_PI * (1.0 - (double)m_id / scan->w);
-            theta_azimuth = -2 * M_PI * sensor_info.beam_azimuth_angles[j] / 360;
-            phi = 2 * M_PI * sensor_info.beam_altitude_angles[j] / 360;
+            double theta_encoder = 2 * M_PI * (1.0 - (double)m_id / scan->w);
+            double theta_azimuth = -2 * M_PI * sensor_info.beam_azimuth_angles[j] / 360.0;
+            double phi = 2 * M_PI * sensor_info.beam_altitude_angles[j] / 360.0;
 
             (xyz + *count)->x = rng2 * cos(theta_encoder + theta_azimuth) * cos(phi) + sensor_info.beam_to_lidar_transform[0][3] * cos(theta_encoder);
             (xyz + *count)->y = rng2 * sin(theta_encoder + theta_azimuth) * cos(phi) + sensor_info.beam_to_lidar_transform[0][3] * sin(theta_encoder);
@@ -810,7 +838,7 @@ xyz_t* os_cartesian(lidar_scan_t *scan, size_t *count)
 
 **OpenCV 接口**
 
-```
+```c++
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
@@ -832,7 +860,7 @@ extern "C" {
 
 **PDAL 接口**
 
-```
+```c++
 #include <pdal/PointView.hpp>
 #include <pdal/PointTable.hpp>
 #include <pdal/StageFactory.hpp>
@@ -849,7 +877,7 @@ extern "C" {
 
 **测试例程**
 
-```
+```c++
 // ... (definitions for beam_altitude_angles, beam_azimuth_angles, pixel_shift_by_row) ...
 
 static sensor_info_t info = {
@@ -908,7 +936,11 @@ int get_scan_test()
 
 以上的测试例程输出的2D深度图像见图7,3D点云见图8。
 
+![2dimg](./OSAPI_Tutorial.assets/2dimg.png)
+
 [图7: 测试例程输出的2D深度图像]
+
+![3dpoint](./OSAPI_Tutorial.assets/3dpoint.png)
 
 [图8: 在CloudCompare 中打开测试例程输出的.las文件]
 
